@@ -7,14 +7,14 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
@@ -30,6 +30,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 public class Home extends AppCompatActivity {
     public static Firestore firestore;
@@ -44,6 +45,7 @@ public class Home extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycleView);
 
         try {
+            new CustomSharedPreferences(this, "account").reset();
             this.authenticate();
         } catch (UnrecoverableKeyException | NoSuchPaddingException | CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchProviderException e) {
             e.printStackTrace();
@@ -70,6 +72,16 @@ public class Home extends AppCompatActivity {
                     CustomSharedPreferences csp = new CustomSharedPreferences(Home.this, "account");
                     byte[] byteFingerCiphertext = result.getCryptoObject().getCipher().doFinal();
 
+                    try{
+                        SecretKey sk = crypto.getBiometricSecretKey("account");
+                        IvParameterSpec ivv = new IvParameterSpec(crypto.generateIVBytes(16));
+                        Log.e("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaO", crypto.encrypt("aaa", sk, ivv));
+                    } catch (UnrecoverableKeyException | CertificateException | KeyStoreException | IOException e) {
+                        e.printStackTrace();
+                    }
+                    System.exit(0);
+
+                    Log.e("INNFNFFOFOFOFOFOFOFOFO", "0000000000000000000000000");
                     // Initialize firestore class
                     if (csp.getString("password").equals("")){
                         Bundle bundle = new Bundle();
@@ -79,14 +91,20 @@ public class Home extends AppCompatActivity {
                         signIn.show(getSupportFragmentManager(), SignIn.TAG);
                     }
                     else{
+                        Log.e("INNFNFFOFOFOFOFOFOFOFO", "22222222222222222222");
                         SecretKey fingerKey = crypto.toSecretKey(byteFingerCiphertext);
-                        String password = crypto.decrypt(csp.getString("password"), fingerKey);
-                        byte[] bytePassword = password.getBytes(StandardCharsets.UTF_8);
+                        byte[] ivBytes = Base64.decode(csp.getString("iv"), Base64.DEFAULT);
+                        IvParameterSpec iv = new IvParameterSpec(ivBytes);
+                        String password = crypto.decrypt(csp.getString("password"), fingerKey, iv);
+
+                        byte[] bytePassword = Base64.decode(password, Base64.DEFAULT);
+                        Log.e("INNFNFFOFOFOFOFOFOFOFO", "22222222222222222222");
                         SecretKey passKey = crypto.toSecretKey(bytePassword);
-                        firestore = new Firestore(passKey);
+                        firestore = new Firestore(passKey, iv);
+                        Log.e("INNFNFFOFOFOFOFOFOFOFO", "22222222222222222222");
                         Home.this.initGridLayout();
                     }
-                } catch (BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                } catch (BadPaddingException | IllegalBlockSizeException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | InvalidAlgorithmParameterException e) {
                     e.printStackTrace();
                 }
             }
@@ -124,9 +142,9 @@ public class Home extends AppCompatActivity {
                 add("google.com");
             }
         };
-        adapter = new Adapter(this, urls);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2, GridLayoutManager.VERTICAL, false);
-        recyclerView.setLayoutManager(gridLayoutManager);
-        recyclerView.setAdapter(adapter);
+        this.recyclerView.setLayoutManager(gridLayoutManager);
+        this.adapter = new Adapter(this, this.urls);
+        this.recyclerView.setAdapter(this.adapter);
     }
 }

@@ -5,13 +5,15 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 
-import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -19,6 +21,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class SignIn extends DialogFragment {
@@ -45,16 +48,23 @@ public class SignIn extends DialogFragment {
             EditText editText = (EditText) getDialog().getWindow().findViewById(R.id.password);
             String plaintextPass = editText.getText().toString();
             Cryptography crypto = new Cryptography();
+            CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
             try {
+                // Generate IV for password
+                byte[] ivBytes = crypto.generateIVBytes(16);
+                IvParameterSpec iv = new IvParameterSpec(ivBytes);
+                csp.putString("iv", Base64.encodeToString(ivBytes, Base64.DEFAULT));
+
                 // Encrypt password and save with Shared Preferences
-                String ciphertextPass = crypto.encrypt(plaintextPass, fingerKey);
-                CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
+                Log.e("DDDDDDDDDDDDDDDDDDDDDDDDDDd", fingerKey.toString());
+                String ciphertextPass = crypto.encrypt(plaintextPass, fingerKey, iv);
                 csp.putString("password", ciphertextPass);
 
+
                 // Convert password to Secret Key
-                SecretKey passKey = crypto.toSecretKey(plaintextPass.getBytes(StandardCharsets.UTF_8));
-                Home.firestore = new Firestore(passKey);
-            } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException e) {
+                SecretKey passKey = crypto.toSecretKey(Base64.decode(plaintextPass, Base64.DEFAULT));
+                Home.firestore = new Firestore(passKey, iv);
+            } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException e) {
                 e.printStackTrace();
             }
         });

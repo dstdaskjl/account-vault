@@ -45,6 +45,7 @@ public class CustomSharedPreferences {
         return sharedPreferences.contains(key);
     }
 
+    // Delete the current editor file
     public void reset(){
         editor.clear().commit();
     }

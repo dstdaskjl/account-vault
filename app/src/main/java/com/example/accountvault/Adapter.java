@@ -1,6 +1,7 @@
 package com.example.accountvault;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,7 +40,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
         try {
             String url = this.urls.get(position);
             holder.website.setText(this.getDomainName(url));
-            this.setImages(holder.image, url);
+            this.setImages(holder.imageView, url);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -57,6 +58,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     }
 
     public void setImages(ImageView imageView, String url){
+        Log.e("INNFNFFOFOFOFOFOFOFOFO", url);
         Picasso.with(this.context)
                 .load("https://logo.clearbit.com/" + url)
                 .placeholder(R.drawable.no_image)
@@ -66,12 +68,12 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
 
     public class ViewHolder extends RecyclerView.ViewHolder{
         TextView website;
-        ImageView image;
+        ImageView imageView;
 
         public ViewHolder(@NonNull View itemView){
             super(itemView);
             website = itemView.findViewById(R.id.textView2);
-            image = itemView.findViewById(R.id.imageView2);
+            imageView = itemView.findViewById(R.id.imageView2);
         }
     }
 }
