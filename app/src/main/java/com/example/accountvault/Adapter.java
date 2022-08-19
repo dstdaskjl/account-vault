@@ -58,7 +58,6 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     }
 
     public void setImages(ImageView imageView, String url){
-        Log.e("INNFNFFOFOFOFOFOFOFOFO", url);
         Picasso.with(this.context)
                 .load("https://logo.clearbit.com/" + url)
                 .placeholder(R.drawable.no_image)

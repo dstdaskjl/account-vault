@@ -36,8 +36,6 @@ public class SignIn extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         super.onCreateDialog(savedInstanceState);
-        byte[] byteFingerCiphertext = getArguments().getByteArray("fingerCiphertext");
-        SecretKey fingerKey = new SecretKeySpec(byteFingerCiphertext, 0, byteFingerCiphertext.length, "AES");
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
@@ -45,26 +43,18 @@ public class SignIn extends DialogFragment {
 
         builder.setView(inflater.inflate(R.layout.signin, null));
         builder.setPositiveButton(R.string.sign_in, (dialog, id) -> {
-            EditText editText = (EditText) getDialog().getWindow().findViewById(R.id.password);
-            String plaintextPass = editText.getText().toString();
             Cryptography crypto = new Cryptography();
             CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
+            EditText editText = getDialog().getWindow().findViewById(R.id.password);
+
             try {
-                // Generate IV for password
-                byte[] ivBytes = crypto.generateIVBytes(16);
-                IvParameterSpec iv = new IvParameterSpec(ivBytes);
-                csp.putString("iv", Base64.encodeToString(ivBytes, Base64.DEFAULT));
-
-                // Encrypt password and save with Shared Preferences
-                Log.e("DDDDDDDDDDDDDDDDDDDDDDDDDDd", fingerKey.toString());
-                String ciphertextPass = crypto.encrypt(plaintextPass, fingerKey, iv);
-                csp.putString("password", ciphertextPass);
-
-
-                // Convert password to Secret Key
-                SecretKey passKey = crypto.toSecretKey(Base64.decode(plaintextPass, Base64.DEFAULT));
-                Home.firestore = new Firestore(passKey, iv);
-            } catch (NoSuchPaddingException | NoSuchAlgorithmException | BadPaddingException | IllegalBlockSizeException | InvalidKeyException | InvalidAlgorithmParameterException e) {
+                String plainTextPass = editText.getText().toString();
+                String hashedPass = crypto.hash(plainTextPass);
+                csp.putString("password", hashedPass);
+                SecretKey secretKey = crypto.generateSecretKey(hashedPass);
+                Home.firestore = new Firestore(secretKey);
+                ((Home)getActivity()).initGridLayout();
+            } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
         });

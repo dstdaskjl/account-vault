@@ -23,18 +23,16 @@ import javax.crypto.spec.IvParameterSpec;
 public class Firestore {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private final Cryptography crypto = new Cryptography();
-    private final SecretKey passKey;
-    private final IvParameterSpec iv;
+    private final SecretKey secretKey;
 
-    public Firestore(SecretKey passKey, IvParameterSpec iv){
-        this.passKey = passKey;
-        this.iv = iv;
+    public Firestore(SecretKey secretKey){
+        this.secretKey = secretKey;
     }
 
     public void add(String website, String id, String passHint) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-        String encryptedWebsite = this.crypto.encrypt(website, this.passKey, this.iv);
-        String encryptedId = this.crypto.encrypt(id, this.passKey, this.iv);
-        String encryptedPassHint = this.crypto.encrypt(passHint, this.passKey, this.iv);
+        String encryptedWebsite = this.crypto.encrypt(website);
+        String encryptedId = this.crypto.encrypt(id);
+        String encryptedPassHint = this.crypto.encrypt(passHint);
 
         Map<String, Object> account = new HashMap<>();
         account.put("id", encryptedId);
