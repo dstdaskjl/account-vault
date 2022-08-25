@@ -3,7 +3,6 @@ package com.example.accountvault;
 import static android.content.ContentValues.TAG;
 
 import android.annotation.SuppressLint;
-import android.os.Handler;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -12,7 +11,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -57,8 +55,6 @@ public class Firestore {
     private final SecretKey secretKey;
     private final Adapter adapter;
     private Map<String, List<Map<String, String>>> accounts;
-    private int count;
-    private int temp_count;
 
     public Firestore(SecretKey secretKey, Adapter adapter){
         this.secretKey = secretKey;
@@ -74,24 +70,8 @@ public class Firestore {
         pass_hint.put("password hint", cipherTextPassHint);
 
         db.collection(cipherTextWebsite).document(cipherTextId).set(pass_hint);
-    }
-
-    public void add(String website) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, UnsupportedEncodingException {
-        String cipherTextWebsite = sanitize(crypto.encrypt(secretKey, website));
-        DocumentReference docRef = db.collection("websites").document(cipherTextWebsite);
-        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (!document.exists()) {
-                        db.collection("websites").document(cipherTextWebsite).set(new HashMap<>());
-                    }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
+        db.collection("websites").document(cipherTextWebsite).set(new HashMap<>());
+        refresh();
     }
 
     public void delete(String collection, String document){
@@ -113,10 +93,6 @@ public class Firestore {
 
     public void refresh(){
         accounts = (Map<String, List<Map<String, String>>>) new HashMap<String, List<Map<String, String>>>();
-        temp_count = 0;
-        count = 0;
-
-        setCount();
         setAccounts();
     }
 
@@ -141,7 +117,7 @@ public class Firestore {
                                                                 public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                                                                     DocumentSnapshot ds = task.getResult();
                                                                     if (ds.exists()){
-                                                                        String passHint = (String) Objects.requireNonNull(ds.getData()).get("password hint");
+                                                                        String passHint = (String) ds.getData().get("password hint");
 
                                                                         try {
                                                                             String plainTextWebsite = crypto.decrypt(secretKey, sanitize(website));
@@ -158,11 +134,7 @@ public class Firestore {
                                                                             else{
                                                                                 accounts.put(plainTextWebsite, new ArrayList<Map<String, String>>(){{add(account);}});
                                                                             }
-
-                                                                            temp_count += 1;
-                                                                            if (temp_count == count){
-                                                                                Firestore.this.updateAdapter();
-                                                                            }
+                                                                            Firestore.this.updateAdapter();
 
                                                                         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException | UnsupportedEncodingException e) {
                                                                             e.printStackTrace();
@@ -175,7 +147,6 @@ public class Firestore {
                                                                 }
                                                             });
                                                 }
-
                                             }
                                             else {
                                                 Log.w(TAG, "Error getting documents.", task.getException());
@@ -195,29 +166,6 @@ public class Firestore {
                         Log.w(TAG, "Error getting documents.", task.getException());
                     }
 
-                });
-    }
-
-    private void setCount(){
-        db.collection("websites")
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()){
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String website = document.getId();
-                            db.collection(website).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                    if (task.isSuccessful()){
-                                        count += task.getResult().size();
-                                    }
-                                }
-                            });
-                        }
-                    }
-                    else {
-                        Log.w(TAG, "Error getting documents.", task.getException());
-                    }
                 });
     }
 

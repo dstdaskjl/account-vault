@@ -47,9 +47,7 @@ public class Add extends DialogFragment {
             String passHint = passHintEditText.getText().toString();
 
             try {
-                Home.firestore.add(website);
                 Home.firestore.add(website, account, passHint);
-                Home.firestore.refresh();
             } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException | InvalidAlgorithmParameterException | UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
