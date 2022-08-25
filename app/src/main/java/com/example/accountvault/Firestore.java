@@ -80,7 +80,20 @@ public class Firestore {
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        Log.d(TAG, "DocumentSnapshot successfully deleted!");
+                        db.collection(collection).get()
+                                .addOnCompleteListener(
+                                        new OnCompleteListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                                if (task.isSuccessful()){
+                                                    if (task.getResult().isEmpty()){
+                                                        delete("websites", collection);
+                                                    }
+                                                }
+                                                refresh();
+                                            }
+                                        }
+                                );
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -139,7 +152,6 @@ public class Firestore {
                                                                         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException | UnsupportedEncodingException e) {
                                                                             e.printStackTrace();
                                                                         }
-
                                                                     }
                                                                     else{
                                                                         Log.e("Refresh error", "The document snapshot does not exist");
