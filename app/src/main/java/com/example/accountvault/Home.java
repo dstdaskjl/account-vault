@@ -7,9 +7,11 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.res.Resources;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
@@ -23,14 +25,13 @@ import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
 
 public class Home extends AppCompatActivity {
     public static Firestore firestore;
@@ -48,6 +49,22 @@ public class Home extends AppCompatActivity {
         } catch (UnrecoverableKeyException | NoSuchPaddingException | CertificateException | NoSuchAlgorithmException | KeyStoreException | IOException | InvalidKeyException | InvalidAlgorithmParameterException | NoSuchProviderException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.add_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.add_button) {
+            new Add().show(getSupportFragmentManager(), Add.TAG);
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void authenticate() throws UnrecoverableKeyException, NoSuchPaddingException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
@@ -68,18 +85,16 @@ public class Home extends AppCompatActivity {
 
                 Cryptography crypto = new Cryptography();
                 CustomSharedPreferences csp = new CustomSharedPreferences(Home.this, "account");
-                String hashedPass = csp.getString("password");
-                ///
-//                csp.reset();
-                ///
+                String hashedPass = csp.getString("master_password");
+                Home.this.initWebsiteList();
+
                 if (hashedPass.equals("")){
-                    SignIn signIn = new SignIn();
-                    signIn.show(getSupportFragmentManager(), SignIn.TAG);
+                    new SignIn().show(getSupportFragmentManager(), SignIn.TAG);
                 }
                 else{
                     SecretKey secretKey = crypto.generateSecretKey(hashedPass);
-                    firestore = new Firestore(secretKey);
-                    Home.this.initGridLayout();
+                    firestore = new Firestore(secretKey, adapter);
+                    firestore.refresh();
                 }
             }
 
@@ -99,26 +114,10 @@ public class Home extends AppCompatActivity {
         );
     }
 
-
-    // https://www.youtube.com/watch?v=cYjX6_TL_EA&ab_channel=SmallAcademy
-    // https://square.github.io/picasso/
-    public void setImages(ImageView imageView, String url){
-        Picasso.with(this)
-                .load("https://logo.clearbit.com/" + url)
-                .placeholder(R.drawable.no_image)
-                .error(R.drawable.no_image)
-                .into(imageView);
-    }
-
-    public void initGridLayout(){
-        List<String> urls = new ArrayList<String>(){
-            {
-                add("https://www.google.com");
-            }
-        };
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2, GridLayoutManager.VERTICAL, false);
+    public void initWebsiteList(){
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         recyclerView.setLayoutManager(gridLayoutManager);
-        adapter = new Adapter(this, urls);
+        adapter = new Adapter(this, new ArrayList<>());
         recyclerView.setAdapter(adapter);
     }
 }

@@ -1,28 +1,18 @@
 package com.example.accountvault;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Base64;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 public class SignIn extends DialogFragment {
 
@@ -45,15 +35,16 @@ public class SignIn extends DialogFragment {
         builder.setPositiveButton(R.string.sign_in, (dialog, id) -> {
             Cryptography crypto = new Cryptography();
             CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
-            EditText editText = getDialog().getWindow().findViewById(R.id.password);
+            EditText passEditText = getDialog().getWindow().findViewById(R.id.password);
 
             try {
-                String plainTextPass = editText.getText().toString();
+                String plainTextPass = passEditText.getText().toString();
                 String hashedPass = crypto.hash(plainTextPass);
-                csp.putString("password", hashedPass);
+                csp.putString("master_password", hashedPass);
+
                 SecretKey secretKey = crypto.generateSecretKey(hashedPass);
-                Home.firestore = new Firestore(secretKey);
-                ((Home)getActivity()).initGridLayout();
+                Home.firestore = new Firestore(secretKey, ((Home)getActivity()).adapter);
+                Home.firestore.refresh();
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }

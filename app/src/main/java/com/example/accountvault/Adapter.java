@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
@@ -22,8 +23,8 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     LayoutInflater inflater;
     Context context;
 
-    public Adapter(Context context, List<String> titles){
-        this.urls = titles;
+    public Adapter(Context context, List<String> websites){
+        this.urls = websites;
         this.inflater = LayoutInflater.from(context);
         this.context = context;
     }
@@ -52,11 +53,15 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     }
 
     public String getDomainName(String url) throws URISyntaxException {
+        if (!url.startsWith("https://")){
+            url = "https://" + url;
+        }
         URI uri = new URI(url);
         String domain = uri.getHost();
         return domain.startsWith("www.") ? domain.substring(4) : domain;
     }
 
+    // https://square.github.io/picasso/
     public void setImages(ImageView imageView, String url){
         Picasso.with(this.context)
                 .load("https://logo.clearbit.com/" + url)

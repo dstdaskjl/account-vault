@@ -6,6 +6,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -14,7 +15,6 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
@@ -32,85 +32,28 @@ public class Cryptography {
     private final String ALGORITHM = "AES";
     private final String PROVIDER = "AndroidKeyStore";
     private final String TRANSFORMATION = "AES/CBC/PKCS7Padding";
+    private final byte[] IV = Arrays.copyOfRange(toBase64Bytes(PROVIDER), 0, 16);
 
     public String hash(String plainText) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hashedTextBytes = md.digest(Base64.decode(plainText, Base64.DEFAULT));
-        return this.toHexString(hashedTextBytes);
+        byte[] hashedBytes = md.digest(toBase64Bytes(plainText));
+        return toBase64String(hashedBytes);
     }
 
-    // https://www.javacodegeeks.com/2018/03/aes-encryption-and-decryption-in-javacbc-mode.html
-//    public String encrypt(String plainText, SecretKey secretKey, IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-//            BadPaddingException, IllegalBlockSizeException, InvalidKeyException, InvalidAlgorithmParameterException {
-//        try{
-//            Cipher cipher = this.getCipher();
-////            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-////            cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
-//            cipher.init(Cipher.ENCRYPT_MODE, secretKey, cipher.getParameters());
-//            Log.e("TESTSTSTSTSTSTSTSTS", plainText);
-//            byte[] plaintextBytes = Base64.decode(plainText, Base64.DEFAULT);
-//            Log.e("TESTSTSTSTSTSTSTSTS", plainText + " " + plaintextBytes.length);
-//            byte[] encrypted = cipher.doFinal(plainText.getBytes());
-//            Log.e("TESTSTSTSTSTSTSTSTS", plainText);
-//            return Base64.encodeToString(encrypted, Base64.DEFAULT);
-//        }
-//        catch (Exception e){
-//            Log.e("ErrrrrrrrORORORORR", e.toString());
-//            e.printStackTrace();
-//        }
-//        return "";
-//    }
-
-    public String encrypt(String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            BadPaddingException, IllegalBlockSizeException, InvalidKeyException, InvalidAlgorithmParameterException {
-        try{
-//            Cipher cipher = this.initCipher();
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
-            SecretKey secretKey = this.getSecretKey("crypto");
-            if (secretKey == null){
-                secretKey = this.generateSecretKey(
-                        new KeyGenParameterSpec.Builder(
-                                "crypto",
-                                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-                                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
-                                .build()
-                );
-            }
-
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-
-
-            byte[] plainTextBytes = Base64.decode(plainText, Base64.DEFAULT);
-            byte[] encrypted = cipher.doFinal(plainTextBytes);
-            return Base64.encodeToString(encrypted, Base64.DEFAULT);
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        return "";
+    public String encrypt(SecretKey secretKey, String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(IV));
+        byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
+        byte[] cipherTextBytes = cipher.doFinal(plainTextBytes);
+        return toBase64String(cipherTextBytes);
     }
 
-    public String decrypt(String cipherText, SecretKey secretKey, IvParameterSpec iv) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            BadPaddingException, IllegalBlockSizeException, InvalidKeyException, InvalidAlgorithmParameterException {
-
-        try{
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
-            byte[] decrypted = cipher.doFinal(Base64.decode(cipherText, Base64.DEFAULT));
-            return Base64.encodeToString(decrypted, Base64.DEFAULT);
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    public byte[] generateIVBytes(int size){
-        byte[] iv = new byte[size];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(iv);
-        return iv;
+    public String decrypt(SecretKey secretKey, String cipherText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(IV));
+        byte[] cipherTextBytes = toBase64Bytes(cipherText);
+        byte[] plainTextBytes = cipher.doFinal(cipherTextBytes);
+        return new String(plainTextBytes, StandardCharsets.UTF_8);
     }
 
     public SecretKey generateSecretKey(KeyGenParameterSpec keyGenParameterSpec) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
@@ -120,7 +63,7 @@ public class Cryptography {
     }
 
     public SecretKey generateSecretKey(String stringKey){
-        byte[] decodedKey = Base64.decode(stringKey, Base64.DEFAULT);
+        byte[] decodedKey = toBase64Bytes(stringKey);
         return new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
     }
 
@@ -130,17 +73,7 @@ public class Cryptography {
         return ((SecretKey)keyStore.getKey(alias,null));
     }
 
-//    public Cipher getCipher() throws NoSuchPaddingException, NoSuchAlgorithmException {
-////        return Cipher.getInstance("AES/CBC/PKCS5PADDING");
-//        return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
-//                + KeyProperties.BLOCK_MODE_CBC + "/"
-//                + KeyProperties.ENCRYPTION_PADDING_PKCS7);
-//    }
-
     public Cipher initCipher() throws NoSuchPaddingException, NoSuchAlgorithmException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
-//        Cipher cipher = Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
-//                + KeyProperties.BLOCK_MODE_CBC + "/"
-//                + KeyProperties.ENCRYPTION_PADDING_PKCS7);
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
 
         SecretKey secretKey = this.getSecretKey("account");
@@ -161,19 +94,11 @@ public class Cryptography {
         return cipher;
     }
 
-    public SecretKey toSecretKey(byte[] ciphertext){
-        return new SecretKeySpec(ciphertext, 0, ciphertext.length, ALGORITHM);
+    private String toBase64String(byte[] bytes){
+        return Base64.encodeToString(bytes, Base64.DEFAULT);
     }
 
-    private String toHexString(byte[] byteArray){
-        StringBuilder hexString = new StringBuilder(2 * byteArray.length);
-        for (byte b : byteArray) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) {
-                hexString.append('0');
-            }
-            hexString.append(hex);
-        }
-        return hexString.toString();
+    private byte[] toBase64Bytes(String string){
+        return Base64.decode(string, Base64.DEFAULT);
     }
 }
