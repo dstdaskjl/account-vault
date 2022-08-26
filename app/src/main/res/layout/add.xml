@@ -5,10 +5,10 @@
     android:layout_height="wrap_content">
 
     <TextView
-        android:text="@string/account_information"
+        android:text="@string/add_account"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:gravity="center"
+        android:gravity="center_vertical"
         android:background="#8db9ba"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"

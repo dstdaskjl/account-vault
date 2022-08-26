@@ -1,8 +1,10 @@
 package com.example.accountvault;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +22,7 @@ import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 import javax.crypto.NoSuchPaddingException;
@@ -75,7 +78,7 @@ public class Home extends AppCompatActivity {
                     @NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
 
-                Cryptography crypto = new Cryptography();
+                Cryptography crypto = new Cryptography(null);
                 CustomSharedPreferences csp = new CustomSharedPreferences(Home.this, "account");
                 String hashedPass = csp.getString("master_password");
                 Home.this.initWebsiteList();
@@ -102,14 +105,14 @@ public class Home extends AppCompatActivity {
                 .build();
         biometricPrompt.authenticate(
                 promptInfo,
-                new BiometricPrompt.CryptoObject(new Cryptography().initCipher())
+                new BiometricPrompt.CryptoObject(new Cryptography(null).initCipher())
         );
     }
 
     public void initWebsiteList(){
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
         recyclerView.setLayoutManager(gridLayoutManager);
-        adapter = new Adapter(this, new ArrayList<>());
+        adapter = new Adapter(this, new ArrayList<>(), new HashMap<>());
         recyclerView.setAdapter(adapter);
     }
 }

@@ -34,7 +34,7 @@ public class Add extends DialogFragment {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
-        this.setCancelable(false);
+//        this.setCancelable(false);
 
         builder.setView(inflater.inflate(R.layout.add, null));
         builder.setPositiveButton(R.string.add, (dialog, id) -> {

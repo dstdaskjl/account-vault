@@ -33,7 +33,7 @@ public class SignIn extends DialogFragment {
 
         builder.setView(inflater.inflate(R.layout.signin, null));
         builder.setPositiveButton(R.string.sign_in, (dialog, id) -> {
-            Cryptography crypto = new Cryptography();
+            Cryptography crypto = new Cryptography(null);
             CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
             EditText passEditText = getDialog().getWindow().findViewById(R.id.password);
 

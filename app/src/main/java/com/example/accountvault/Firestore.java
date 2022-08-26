@@ -50,21 +50,20 @@ import javax.crypto.SecretKey;
  */
 
 public class Firestore {
+    public final Cryptography crypto;
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private final Cryptography crypto = new Cryptography();
-    private final SecretKey secretKey;
     private final Adapter adapter;
-    private Map<String, List<Map<String, String>>> accounts;
+    private Map<String, List<String>> accounts;
 
     public Firestore(SecretKey secretKey, Adapter adapter){
-        this.secretKey = secretKey;
+        this.crypto = new Cryptography(secretKey);
         this.adapter = adapter;
     }
 
     public void add(String website, String id, String passHint) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
-        String cipherTextWebsite = sanitize(crypto.encrypt(secretKey, website));
-        String cipherTextId = sanitize(crypto.encrypt(secretKey, id));
-        String cipherTextPassHint = sanitize(crypto.encrypt(secretKey, passHint));
+        String cipherTextWebsite = crypto.encrypt(website);
+        String cipherTextId = crypto.encrypt(id);
+        String cipherTextPassHint = crypto.encrypt(passHint);
 
         Map<String, Object> pass_hint = new HashMap<>();
         pass_hint.put("password hint", cipherTextPassHint);
@@ -75,41 +74,12 @@ public class Firestore {
     }
 
     public void delete(String collection, String document){
-        db.collection(collection).document(document)
-                .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        db.collection(collection).get()
-                                .addOnCompleteListener(
-                                        new OnCompleteListener<QuerySnapshot>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                                if (task.isSuccessful()){
-                                                    if (task.getResult().isEmpty()){
-                                                        delete("websites", collection);
-                                                    }
-                                                }
-                                                refresh();
-                                            }
-                                        }
-                                );
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error deleting document", e);
-                    }
-                });
+        db.collection(collection).document(document).delete();
+        refresh();
     }
 
     public void refresh(){
-        accounts = (Map<String, List<Map<String, String>>>) new HashMap<String, List<Map<String, String>>>();
-        setAccounts();
-    }
-
-    private void setAccounts(){
+        accounts = new HashMap<>();
         db.collection("websites")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -133,19 +103,16 @@ public class Firestore {
                                                                         String passHint = (String) ds.getData().get("password hint");
 
                                                                         try {
-                                                                            String plainTextWebsite = crypto.decrypt(secretKey, sanitize(website));
-                                                                            String plainTextId = crypto.decrypt(secretKey, sanitize(accountID));
-                                                                            String plainTextPassHint = crypto.decrypt(secretKey, sanitize(passHint));
+                                                                            String plainTextWebsite = crypto.decrypt(website);
+                                                                            String plainTextId = crypto.decrypt(accountID);
+                                                                            String plainTextPassHint = crypto.decrypt(passHint);
 
-                                                                            Map<String, String> account = new HashMap<>();
-                                                                            account.put("id", plainTextId);
-                                                                            account.put("password hint", plainTextPassHint);
-
+                                                                            String idPass = plainTextId + "\n" + plainTextPassHint;
                                                                             if (accounts.containsKey(plainTextWebsite)){
-                                                                                accounts.get(plainTextWebsite).add(account);
+                                                                                accounts.get(plainTextWebsite).add(idPass);
                                                                             }
                                                                             else{
-                                                                                accounts.put(plainTextWebsite, new ArrayList<Map<String, String>>(){{add(account);}});
+                                                                                accounts.put(plainTextWebsite, new ArrayList<String>(){{add(idPass);}});
                                                                             }
                                                                             Firestore.this.updateAdapter();
 
@@ -181,23 +148,12 @@ public class Firestore {
                 });
     }
 
-    // In Firestore, "/" is a path segment
-    private String sanitize(String string){
-        string = string.trim().replaceAll("\n", "").replaceAll("\r", "");
-        if (string.contains("/")){
-            return string.replaceAll("/", "~");
-        }
-        else if (string.contains("~")){
-            return string.replaceAll("~", "/");
-        }
-        return string;
-    }
-
     @SuppressLint("NotifyDataSetChanged")
     private void updateAdapter(){
         List<String> websites = new ArrayList<>(accounts.keySet());
         Collections.sort(websites);
         adapter.urls = websites;
+        adapter.accounts = accounts;
         adapter.notifyDataSetChanged();
     }
 }

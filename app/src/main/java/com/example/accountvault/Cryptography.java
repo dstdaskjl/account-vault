@@ -33,6 +33,11 @@ public class Cryptography {
     private final String PROVIDER = "AndroidKeyStore";
     private final String TRANSFORMATION = "AES/CBC/PKCS7Padding";
     private final byte[] IV = Arrays.copyOfRange(toBase64Bytes(PROVIDER), 0, 16);
+    private SecretKey secretKey;
+
+    public Cryptography(SecretKey secretKey){
+        this.secretKey = secretKey;
+    }
 
     public String hash(String plainText) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -40,15 +45,16 @@ public class Cryptography {
         return toBase64String(hashedBytes);
     }
 
-    public String encrypt(SecretKey secretKey, String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+    public String encrypt(String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(IV));
         byte[] plainTextBytes = plainText.getBytes(StandardCharsets.UTF_8);
         byte[] cipherTextBytes = cipher.doFinal(plainTextBytes);
-        return toBase64String(cipherTextBytes);
+        return sanitize(toBase64String(cipherTextBytes));
     }
 
-    public String decrypt(SecretKey secretKey, String cipherText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+    public String decrypt(String cipherText) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException {
+        cipherText = sanitize(cipherText);
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
         cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(IV));
         byte[] cipherTextBytes = toBase64Bytes(cipherText);
@@ -64,7 +70,9 @@ public class Cryptography {
 
     public SecretKey generateSecretKey(String stringKey){
         byte[] decodedKey = toBase64Bytes(stringKey);
-        return new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
+        SecretKey secretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, ALGORITHM);
+        this.secretKey = secretKey;
+        return secretKey;
     }
 
     public SecretKey getSecretKey(String alias) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException {
@@ -100,5 +108,17 @@ public class Cryptography {
 
     private byte[] toBase64Bytes(String string){
         return Base64.decode(string, Base64.DEFAULT);
+    }
+
+    // In Firestore, "/" is a path segment
+    private String sanitize(String string){
+        string = string.trim().replaceAll("\n", "").replaceAll("\r", "");
+        if (string.contains("/")){
+            return string.replaceAll("/", "~");
+        }
+        else if (string.contains("~")){
+            return string.replaceAll("~", "/");
+        }
+        return string;
     }
 }
