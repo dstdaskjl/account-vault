@@ -66,7 +66,10 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                 @Override
                 public void onClick(View view) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle("Accounts");
+                    ImageView iconImage = new ImageView(context);
+                    setImages(iconImage, url);
+                    builder.setIcon(iconImage.getDrawable());
+                    builder.setTitle(url);
                     builder.setMultiChoiceItems(items, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i, boolean b) {
