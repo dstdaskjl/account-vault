@@ -1,19 +1,15 @@
 package com.example.accountvault;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
@@ -48,7 +44,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = inflater.inflate(R.layout.custom_layout, parent, false);
+        View view = inflater.inflate(R.layout.adapter_item, parent, false);
         return new ViewHolder(view);
     }
 
@@ -62,6 +58,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
             final String[] items = accounts.get(url).toArray(new String[0]);
             final boolean[] checkedItems = new boolean[items.length];
 
+            // show account info
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -71,12 +68,6 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                     builder.setIcon(iconImage.getDrawable());
                     builder.setTitle(url);
                     builder.setItems(items, null);
-//                    builder.setMultiChoiceItems(items, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
-//                        @Override
-//                        public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-//                            checkedItems[i] = b;
-//                        }
-//                    });
                     builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
@@ -157,8 +148,8 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
 
         public ViewHolder(@NonNull View itemView){
             super(itemView);
-            website = itemView.findViewById(R.id.textView2);
-            imageView = itemView.findViewById(R.id.imageView2);
+            website = itemView.findViewById(R.id.url);
+            imageView = itemView.findViewById(R.id.logo);
         }
     }
 }

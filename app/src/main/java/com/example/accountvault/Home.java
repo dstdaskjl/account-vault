@@ -1,10 +1,13 @@
 package com.example.accountvault;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -41,6 +44,8 @@ public class Home extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home);
         recyclerView = findViewById(R.id.recycleView);
+        recyclerView.getLayoutParams().width = 1080;
+        recyclerView.getLayoutParams().height = 1920;
 
         try {
             this.authenticate();
@@ -52,6 +57,7 @@ public class Home extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.add_menu, menu);
+        menu.findItem(R.id.add_button).setIcon(resizeMenuButton(R.drawable.add, 200, 200));
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -141,5 +147,19 @@ public class Home extends AppCompatActivity {
                 promptInfo,
                 new BiometricPrompt.CryptoObject(new Cryptography(null).initCipher())
         );
+    }
+
+    private Drawable resizeMenuButton(int resId, int w, int h)
+    {
+        Bitmap BitmapOrg = BitmapFactory.decodeResource(getResources(), resId);
+        int width = BitmapOrg.getWidth();
+        int height = BitmapOrg.getHeight();
+        float scaleWidth = ((float) w) / width;
+        float scaleHeight = ((float) h) / height;
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        Bitmap resizedBitmap = Bitmap.createBitmap(BitmapOrg, 0, 0,width, height, matrix, true);
+        return new BitmapDrawable(resizedBitmap);
     }
 }
