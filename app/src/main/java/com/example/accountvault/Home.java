@@ -5,9 +5,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -32,6 +34,7 @@ public class Home extends AppCompatActivity {
     public static Firestore firestore;
     RecyclerView recyclerView;
     Adapter adapter;
+    boolean authenticated = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,13 +60,44 @@ public class Home extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.add_button) {
-            new Add().show(getSupportFragmentManager(), Add.TAG);
+            if (authenticated){
+                new Add().show(getSupportFragmentManager(), Add.TAG);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
 
+    public void initWebsiteList(){
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
+        recyclerView.setLayoutManager(gridLayoutManager);
+        adapter = new Adapter(this, new ArrayList<>(), new HashMap<>());
+        recyclerView.setAdapter(adapter);
+    }
+
     private void authenticate() throws UnrecoverableKeyException, NoSuchPaddingException, CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchProviderException {
         Executor executor = ContextCompat.getMainExecutor(this);
+
+        // Check if biometric is available
+        BiometricManager biometricManager = BiometricManager.from(this);
+        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) != BiometricManager.BIOMETRIC_SUCCESS){
+            authenticated = false;
+            String message = "Biometric login should be available";
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+
+            new Thread(){
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(4000);
+                        Home.this.finish();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }.start();
+        }
+
+        // Prompt biometric login
         BiometricPrompt biometricPrompt = new BiometricPrompt(Home.this,
                 executor, new BiometricPrompt.AuthenticationCallback() {
             @Override
@@ -107,12 +141,5 @@ public class Home extends AppCompatActivity {
                 promptInfo,
                 new BiometricPrompt.CryptoObject(new Cryptography(null).initCipher())
         );
-    }
-
-    public void initWebsiteList(){
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 2);
-        recyclerView.setLayoutManager(gridLayoutManager);
-        adapter = new Adapter(this, new ArrayList<>(), new HashMap<>());
-        recyclerView.setAdapter(adapter);
     }
 }

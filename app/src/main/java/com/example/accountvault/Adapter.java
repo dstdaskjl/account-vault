@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -92,9 +93,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                     builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
                         @Override
                         public void onCancel(DialogInterface dialogInterface) {
-                            for (int i=0; i < checkedItems.length; i++){
-                                checkedItems[i] = false;
-                            }
+                            Arrays.fill(checkedItems, false);
                         }
                     });
 
