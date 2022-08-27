@@ -70,33 +70,52 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                     setImages(iconImage, url);
                     builder.setIcon(iconImage.getDrawable());
                     builder.setTitle(url);
-                    builder.setMultiChoiceItems(items, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-                            checkedItems[i] = b;
-                        }
-                    });
-                    builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                    builder.setItems(items, null);
+//                    builder.setMultiChoiceItems(items, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
+//                        @Override
+//                        public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+//                            checkedItems[i] = b;
+//                        }
+//                    });
+                    builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            for (int j=0; j < checkedItems.length; j++){
-                                if (checkedItems[j]){
-                                    String id = items[j].split("\n")[0];
-                                    try {
-                                        String cipherTextWebsite = Home.firestore.crypto.encrypt(url);
-                                        String cipherTextId = Home.firestore.crypto.encrypt(id);
-                                        Home.firestore.delete(cipherTextWebsite, cipherTextId);
-                                    } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException | UnsupportedEncodingException e) {
-                                        e.printStackTrace();
+                            AlertDialog.Builder multiChoiceBuilder = new AlertDialog.Builder(context);
+                            ImageView iconImage = new ImageView(context);
+                            setImages(iconImage, url);
+                            multiChoiceBuilder.setIcon(iconImage.getDrawable());
+                            multiChoiceBuilder.setTitle(url);
+                            multiChoiceBuilder.setMultiChoiceItems(items, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                                    checkedItems[i] = b;
+                                }
+                            });
+                            multiChoiceBuilder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    for (int j=0; j < checkedItems.length; j++){
+                                        if (checkedItems[j]){
+                                            String id = items[j].split("\n")[0];
+                                            try {
+                                                String cipherTextWebsite = Home.firestore.crypto.encrypt(url);
+                                                String cipherTextId = Home.firestore.crypto.encrypt(id);
+                                                Home.firestore.delete(cipherTextWebsite, cipherTextId);
+                                            } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException | UnsupportedEncodingException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
                                     }
                                 }
-                            }
-                        }
-                    });
-                    builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialogInterface) {
-                            Arrays.fill(checkedItems, false);
+                            });
+                            multiChoiceBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                @Override
+                                public void onCancel(DialogInterface dialogInterface) {
+                                    Arrays.fill(checkedItems, false);
+                                }
+                            });
+                            AlertDialog dialog = multiChoiceBuilder.create();
+                            dialog.show();
                         }
                     });
 
