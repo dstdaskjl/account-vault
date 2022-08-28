@@ -97,6 +97,7 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
                                             }
                                         }
                                     }
+                                    Home.firestore.refresh();
                                 }
                             });
                             multiChoiceBuilder.setOnCancelListener(new DialogInterface.OnCancelListener() {

@@ -70,12 +70,10 @@ public class Firestore {
 
         db.collection(cipherTextWebsite).document(cipherTextId).set(pass_hint);
         db.collection("websites").document(cipherTextWebsite).set(new HashMap<>());
-        refresh();
     }
 
     public void delete(String collection, String document){
         db.collection(collection).document(document).delete();
-        refresh();
     }
 
     public void refresh(){
