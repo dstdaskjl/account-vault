@@ -41,7 +41,7 @@ public class Cryptography {
 
     public String hash(String plainText) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-256");
-        byte[] hashedBytes = md.digest(toBase64Bytes(plainText));
+        byte[] hashedBytes = md.digest(toUTF8Bytes(plainText));
         return toBase64String(hashedBytes);
     }
 
@@ -108,6 +108,10 @@ public class Cryptography {
 
     private byte[] toBase64Bytes(String string){
         return Base64.decode(string, Base64.DEFAULT);
+    }
+
+    private byte[] toUTF8Bytes(String string){
+        return string.getBytes(StandardCharsets.UTF_8);
     }
 
     // In Firestore, "/" is a path segment

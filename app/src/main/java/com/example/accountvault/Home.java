@@ -1,20 +1,31 @@
 package com.example.accountvault;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -89,18 +100,8 @@ public class Home extends AppCompatActivity {
             authenticated = false;
             String message = "Biometric login should be available";
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-
-            new Thread(){
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(4000);
-                        Home.this.finish();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }.start();
+            Home.this.finish();
+            System.exit(0);
         }
 
         // Prompt biometric login
@@ -124,7 +125,9 @@ public class Home extends AppCompatActivity {
                 Home.this.initWebsiteList();
 
                 if (hashedPass.equals("")){
-                    new SignIn().show(getSupportFragmentManager(), SignIn.TAG);
+                    SignIn signIn = new SignIn();
+                    signIn.show(getSupportFragmentManager(), SignIn.TAG);
+
                 }
                 else{
                     SecretKey secretKey = crypto.generateSecretKey(hashedPass);

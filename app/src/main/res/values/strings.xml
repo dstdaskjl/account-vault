@@ -3,8 +3,10 @@
     <string name="add_account">Add Account</string>
     <string name="add">Add</string>
     <string name="cancel">Cancel</string>
+    <string name="passwords_do_not_match">Password Do Not Match</string>
     <string name="master_password">Master Password</string>
     <string name="password">Password</string>
+    <string name="password_confirm">Password Confirm</string>
     <string name="sign_in">Sign In</string>
     <string name="id">ID</string>
     <string name="pass_hint">Password Hint</string>

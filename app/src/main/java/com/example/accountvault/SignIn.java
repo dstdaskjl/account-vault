@@ -2,10 +2,13 @@ package com.example.accountvault;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -15,12 +18,12 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.SecretKey;
 
 public class SignIn extends DialogFragment {
+    public static String TAG = "SignInDialog";
+    private AlertDialog dialog;
 
     protected static SignIn newInstance(){
         return new SignIn();
     }
-
-    public static String TAG = "SignInDialog";
 
     @NonNull
     @Override
@@ -36,9 +39,11 @@ public class SignIn extends DialogFragment {
             Cryptography crypto = new Cryptography(null);
             CustomSharedPreferences csp = new CustomSharedPreferences(getActivity(), "account");
             EditText passEditText = getDialog().getWindow().findViewById(R.id.password);
+            EditText passConfirmEditText = getDialog().getWindow().findViewById(R.id.password_confirm);
 
             try {
                 String plainTextPass = passEditText.getText().toString();
+                String plainTextPassConfirm = passConfirmEditText.getText().toString();
                 String hashedPass = crypto.hash(plainTextPass);
                 csp.putString("master_password", hashedPass);
 
@@ -49,13 +54,71 @@ public class SignIn extends DialogFragment {
                 e.printStackTrace();
             }
         });
-        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                SignIn.this.getDialog().cancel();
-                getActivity().finish();
-                System.exit(0);
+
+        dialog = builder.create();
+        return dialog;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        setTextWatcher();
+        dialog.getButton(Dialog.BUTTON_POSITIVE).setEnabled(false);
+    }
+
+    private void setTextWatcher(){
+        EditText passEditText = getDialog().getWindow().findViewById(R.id.password);
+        EditText passconfirmEditText = getDialog().getWindow().findViewById(R.id.password_confirm);
+        TextView warningTextView = getDialog().getWindow().findViewById(R.id.warning);
+
+        passEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                String pass1 = passEditText.getText().toString();
+                String pass2 = passconfirmEditText.getText().toString();
+                if (!pass1.equals("") && pass1.equals(pass2)){
+                    warningTextView.setVisibility(View.INVISIBLE);
+                    dialog.getButton(Dialog.BUTTON_POSITIVE).setEnabled(true);
+                }
+                else{
+                    warningTextView.setVisibility(View.VISIBLE);
+                    dialog.getButton(Dialog.BUTTON_POSITIVE).setEnabled(false);
+                }
             }
         });
-        return builder.create();
+
+        passconfirmEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                String pass1 = passEditText.getText().toString();
+                String pass2 = passconfirmEditText.getText().toString();
+                if (!pass1.equals("") && pass1.equals(pass2)){
+                    warningTextView.setVisibility(View.INVISIBLE);
+                    dialog.getButton(Dialog.BUTTON_POSITIVE).setEnabled(true);
+                }
+                else{
+                    warningTextView.setVisibility(View.VISIBLE);
+                    dialog.getButton(Dialog.BUTTON_POSITIVE).setEnabled(false);
+                }
+            }
+        });
     }
 }
