@@ -1,5 +1,5 @@
 <h1>Account Vault</h1>
-This app stores ids and password hints for each website.
+This app stores ids and password hints of each website.
 Do NOT store the actual password in the database.
 The website logo is automatically downloaded.
 
